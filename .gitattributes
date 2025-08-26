@@ -1,0 +1,11 @@
+# Normalize text files – use LF in repo
+* text=auto
+
+# Source files use LF
+*.{js,jsx,ts,tsx,css,html,md,json,yml,yaml} text eol=lf
+
+# Windows scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
