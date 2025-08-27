@@ -1,10 +1,22 @@
 import { useState } from 'react';
-import { useCampaigns, useCreateCampaign } from './useCampaigns';
+import { useCampaigns, useCreateCampaign, useDeleteCampaign } from './useCampaigns';
 
 export default function CampaignsPage() {
   const { data, isLoading, isError, error } = useCampaigns();
   const create = useCreateCampaign();
+  const del = useDeleteCampaign();
+
   const [name, setName] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
+
+  function handleDelete(c) {
+    const ok = window.confirm(`Delete "${c.name}"? This cannot be undone.`);
+    if (!ok) return;
+    setDeletingId(c.id);
+    del.mutate(c.id, {
+      onSettled: () => setDeletingId(null),
+    });
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +45,11 @@ export default function CampaignsPage() {
             placeholder="e.g. Blackthorne"
             aria-label="Campaign name"
           />
-          <button type="submit" disabled={create.isPending}>
+          <button
+            type="submit"
+            disabled={create.isPending || !name.trim()}
+            title="Create new campaign"
+          >
             {create.isPending ? 'Creating…' : 'Create'}
           </button>
         </form>
@@ -46,16 +62,36 @@ export default function CampaignsPage() {
         {isError && <p className="error">Error: {error.message}</p>}
         {!isLoading && !isError && (
           <ul className="list">
-            {(data ?? []).map(c => (
+            {(data ?? []).map((c) => (
               <li key={c.id} className="listItem">
                 <div>
                   <strong>{c.name}</strong>
-                  <div className="subtle">{c.role} · {c.owner}</div>
+                  <div className="subtle">
+                    {c.role} · {c.owner}
+                  </div>
                 </div>
-                <a className="ghostBtn" href={`#/campaigns/${c.id}`}>Open</a>
+                <div className="actions">
+                  <a
+                    className="ghostBtn"
+                    href={`#/campaigns/${c.id}`}
+                    title="Open campaign"
+                  >
+                    Open
+                  </a>
+                  <button
+                    className="dangerBtn"
+                    onClick={() => handleDelete(c)}
+                    disabled={del.isPending && deletingId === c.id}
+                    title="Delete campaign"
+                  >
+                    {del.isPending && deletingId === c.id ? 'Deleting…' : 'Delete'}
+                  </button>
+                </div>
               </li>
             ))}
-            {(!data || data.length === 0) && <li className="subtle">No campaigns yet.</li>}
+            {(!data || data.length === 0) && (
+              <li className="subtle">No campaigns yet.</li>
+            )}
           </ul>
         )}
       </section>
